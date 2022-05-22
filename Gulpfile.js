@@ -19,7 +19,9 @@ function getAssets(rootDir) {
     rootDir + '/assets/lib/dialog-polyfill/dist/dialog-polyfill.css',
     rootDir + '/assets/lib/dialog-polyfill/dist/dialog-polyfill.js',
     rootDir + '/assets/lib/material-design-lite/material.min.css',
+    rootDir + '/assets/lib/material-design-lite/material.min.css.map',
     rootDir + '/assets/lib/material-design-lite/material.min.js',
+    rootDir + '/assets/lib/material-design-lite/material.min.js.map',
     rootDir + '/assets/lib/clipboard/dist/clipboard.min.js',
     rootDir + '/assets/lib/jsqrcode/src/**.js'
   ];
