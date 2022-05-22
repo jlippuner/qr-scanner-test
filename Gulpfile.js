@@ -2,7 +2,7 @@ const gulp = require('gulp');
 const connect = require('gulp-connect');
 const copy = require('gulp-copy');
 const del = require('del');
-const ghPages = require('gh-pages');
+const ghPages = require('gulp-gh-pages');
 const path = require('path');
 const swPrecache = require('sw-precache');
 
@@ -73,7 +73,8 @@ gulp.task('prod', gulp.series('clean', 'serve-dist'));
 gulp.task('dev', gulp.series('serve-dev'));
 
 gulp.task('gh', gulp.series('build-dist', function() {
-  return ghPages.publish(path.join(__dirname, DIST_DIR));
+  return gulp.src(DIST_DIR + '/**/*')
+      .pipe(ghPages());
 }));
 
 gulp.task('default', gulp.series('gh'));

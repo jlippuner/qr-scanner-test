@@ -4,8 +4,8 @@
   "dependencies": {},
   "devDependencies": {
     "del": "^6.1.0",
-    "gh-pages": "^4.0.0",
     "gulp": "^4.0.2",
+    "gulp-gh-pages": "^0.5.4",
     "gulp-connect": "^5.7.0",
     "gulp-copy": "^4.0.1",
     "path": "^0.12.7",
@@ -14,5 +14,8 @@
   "overrides": {
     "graceful-fs": "^4.2.9",
     "chokidar": "^3.5.3"
+  },
+  "resolutions": {
+    "gift": "^0.10.2"
   }
 }
