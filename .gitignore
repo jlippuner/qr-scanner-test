@@ -2,3 +2,4 @@
 /node_modules
 /app/service-worker.js
 /dist
+yarn.lock

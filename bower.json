@@ -1,9 +1,10 @@
 {
-  "name": "pwa-qr-code-scanner",
+  "name": "acf-qr-scanner",
   "description": "Progressive web app for scanning QR codes offline",
   "main": "index.html",
   "authors": [
-    "Louis Lagrange <lagrange.louis@gmail.com>"
+    "Louis Lagrange <lagrange.louis@gmail.com>",
+    "Jonas Lippuner <jonas@lippuner.ca>"
   ],
   "license": "MIT",
   "keywords": [
@@ -16,7 +17,7 @@
     "app",
     "pwa"
   ],
-  "homepage": "https://github.com/Minishlink/pwa-qr-code-scanner",
+  "homepage": "https://github.com/jlippuner/acf-qr-scanner",
   "private": true,
   "ignore": [
     "**/.*",
@@ -27,8 +28,8 @@
   ],
   "dependencies": {
     "jsqrcode": "https://github.com/LazarSoft/jsqrcode.git",
-    "material-design-lite": "^1.2.1",
-    "dialog-polyfill": "^0.4.5",
-    "clipboard": "^1.5.15"
+    "material-design-lite": "^1.3.0",
+    "dialog-polyfill": "^0.5.6",
+    "clipboard": "^2.0.11"
   }
 }
