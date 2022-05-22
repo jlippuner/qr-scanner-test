@@ -72,9 +72,9 @@ gulp.task('serve-dist', gulp.series('build-dist', function() {
 gulp.task('prod', gulp.series('clean', 'serve-dist'));
 gulp.task('dev', gulp.series('serve-dev'));
 
-gulp.task('gh', gulp.series('build-dist', function() {
+gulp.task('deploy', gulp.series('build-dist', function() {
   return gulp.src(DIST_DIR + '/**/*')
       .pipe(ghPages());
 }));
 
-gulp.task('default', gulp.series('gh'));
+gulp.task('default', gulp.series('deploy'));

@@ -3,3 +3,4 @@
 /app/service-worker.js
 /dist
 yarn.lock
+.publish
