@@ -25,7 +25,7 @@ window.addEventListener('DOMContentLoaded', function () {
         flipCameraButton.disabled = false;
         scanCode(true);
     });
-    new Clipboard('dialog button.copy');
+    new ClipboardJS('dialog button.copy');
 
     // init QRCode Web Worker
     const qrcodeWorker = new Worker("assets/qrcode_worker.js");
