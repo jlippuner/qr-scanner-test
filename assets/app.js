@@ -79,21 +79,23 @@ window.addEventListener('DOMContentLoaded', function () {
             navigator.vibrate(200); // vibration is not supported on Edge, IE, Opera and Safari
             disableUI();
 
-            try {
-                url = new URL(resultData);
-                let linkToResult = document.createElement('a');
-                linkToResult.href = url;
-                linkToResult.innerText = resultData;
-                resultContainer.appendChild(linkToResult);
+            // try {
+            //     url = new URL(resultData);
+            //     let linkToResult = document.createElement('a');
+            //     linkToResult.href = url;
+            //     linkToResult.innerText = resultData;
+            //     resultContainer.appendChild(linkToResult);
 
-                resultSearchGo.href = url;
-                resultSearchGo.innerText = "Go";
-            } catch (e) {
-                resultContainer.innerText = resultData;
+            //     resultSearchGo.href = url;
+            //     resultSearchGo.innerText = "Go";
+            // } catch (e) {
+            //     resultContainer.innerText = resultData;
 
-                resultSearchGo.href = "https://www.google.com/search?q=" + encodeURIComponent(resultData);
-                resultSearchGo.innerText = "Search";
-            }
+            //     resultSearchGo.href = "https://www.google.com/search?q=" + encodeURIComponent(resultData);
+            //     resultSearchGo.innerText = "Search";
+            // }
+
+            resultContainer.innerText = JSON.stringify(e);
 
             resultDialog.showModal();
         } else {
