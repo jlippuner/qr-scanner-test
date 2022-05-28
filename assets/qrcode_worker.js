@@ -40,9 +40,7 @@ function process(input) {
     qrcode.width = input.width;
     qrcode.height = input.height;
     qrcode.imagedata = input.imageData;
-    qrcode.debug = true;
-
-
+    
     let result = false;
     try {
         result = qrcode.process();
