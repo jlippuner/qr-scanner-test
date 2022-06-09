@@ -117,10 +117,9 @@ window.addEventListener('DOMContentLoaded', function () {
             return device.kind === 'videoinput';
         });
 
-        res_entry.innerText = "Devices:";
-        for (var d in devices) {
-            res_entry.innerText += "\n" + d;
-        }
+        res_entry.innerText = "Devices (" + devices.length + "):";
+        str = JSON.stringify(devices);
+        res_entry.innerText += "\n" + str;
 
         if (devices.length > 1) {
             // add a flip camera button
