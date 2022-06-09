@@ -15,6 +15,8 @@ window.addEventListener('DOMContentLoaded', function () {
     const res_name = document.getElementById('res_name');
     const res_entry = document.getElementById('res_entry');
 
+    var curr_result = '';
+
     // init QRCode Web Worker
     const qrcodeWorker = new Worker("assets/qrcode_worker.js");
     qrcodeWorker.postMessage({cmd: 'init'});
@@ -56,12 +58,18 @@ window.addEventListener('DOMContentLoaded', function () {
     }
 
     function showResult (e) {
-        const resultData = e.data;
+        const res = e.data;
 
         // open a dialog with the result if found
-        if (resultData !== false) {
-            navigator.vibrate(200); // vibration is not supported on Edge, IE, Opera and Safari
-            res_name.innerText = resultData;
+        if (res !== false) {
+            // vibrate only if new result
+            if (res != curr_result) {
+                // vibration is not supported on Edge, IE, Opera and Safari
+                navigator.vibrate(200);
+                curr_result = res;
+            }
+            
+            res_name.innerText = res;
         }
 
         scanCode();
