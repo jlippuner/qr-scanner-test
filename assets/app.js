@@ -67,9 +67,8 @@ window.addEventListener('DOMContentLoaded', function () {
                 // vibration is not supported on Edge, IE, Opera and Safari
                 navigator.vibrate(200);
                 curr_result = res;
+                res_name.innerText = res;
             }
-
-            res_name.innerText = res;
         }
 
         scanCode();
@@ -116,10 +115,6 @@ window.addEventListener('DOMContentLoaded', function () {
         devices = devices.filter(function (device) {
             return device.kind === 'videoinput';
         });
-
-        res_entry.innerText = "Devices (" + devices.length + "):";
-        str = JSON.stringify(devices);
-        res_entry.innerText += "\n" + str;
 
         if (devices.length > 1) {
             // add a flip camera button
