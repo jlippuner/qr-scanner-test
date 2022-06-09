@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <meta name="description" content="Lightweight progressive web app for scanning QR codes offline">
-    <meta name="keywords" content="qrcode, scanner, scan, offline, progressive, web, app, pwa, free, lightweight, light">
+    <meta name="keywords"
+        content="qrcode, scanner, scan, offline, progressive, web, app, pwa, free, lightweight, light">
     <meta name="author" content="Jonas Lippuner">
     <title>ACF Midwest Conference 2022 - QR Code Scanner</title>
 
@@ -24,7 +26,8 @@
     <meta property="og:title" content="ACF QR Scanner" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://minishlink.github.io/pwa-qr-code-scanner" />
-    <meta property="og:image" content="https://minishlink.github.io/pwa-qr-code-scanner/assets/images/icons/android-chrome-256x256.png" />
+    <meta property="og:image"
+        content="https://minishlink.github.io/pwa-qr-code-scanner/assets/images/icons/android-chrome-256x256.png" />
     <meta property="og:description" content="Lightweight progressive web app for scanning QR codes offline" />
 
     <script type="text/javascript">
@@ -42,9 +45,8 @@
     <script src="assets/lib/clipboard/dist/clipboard.min.js"></script>
     <script src="assets/app.js"></script>
 </head>
-<body>
-    <div id="loading" class="mdl-progress mdl-js-progress mdl-progress__indeterminate"></div>
 
+<body>
     <video id="camera" autoplay>You need a camera in order to use this app.</video>
     <div id="snapshotLimitOverlay">
         <div id="about">
@@ -52,26 +54,41 @@
             <p>
                 This is a lightweight progressive web app for scanning QR Codes offline.<br />
                 You'll need at least a camera and a compatible browser.<br />
-                Source code is available on GitHub (Minishlink/pwa-qr-code-scanner), click the <strong>About</strong> button.
+                Source code is available on GitHub (Minishlink/pwa-qr-code-scanner), click the <strong>About</strong>
+                button.
             </p>
         </div>
     </div>
     <canvas id="snapshot"></canvas>
-    <button id="flipCamera" type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">Flip Camera</button>
-    <a id="aboutButton" type="button" href="https://github.com/jlippuner/acf-qr-scanner" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">About</a>
+    <button id="flipCamera" type="button" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect">Flip
+        Camera</button>
 
-    <dialog class="mdl-dialog">
-        <h4 class="mdl-dialog__title">Your text</h4>
-        <div class="mdl-dialog__content">
-            <p id="resultsContainer"><span id="result"></span></p>
-            <p>
-                <button type="button" class="copy mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised" data-clipboard-target="#result">Copy</button>
-                <a class="search mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised">Search</a>
-            </p>
+    <div id="board">
+        <div id="res_cont" class="cont">
+            <div id="event_cont">
+                <label for="event">Current event: </label>
+                <select name="event" id="event">
+                    <option value="ev1">Event 1</option>
+                    <option value="ev2">Event 2</option>
+                    <option value="ev3">Event 3</option>
+                    <option value="ev4">Event 4</option>
+                </select>
+            </div>
+
+            <div class="grow">
+                <div class="center" id="res_name">Title VeryLongFirstName VeryLongLastName</div>
+            </div>
+
+            <div id="res_entry">
+                Entry OK
+            </div>
         </div>
-        <div class="mdl-dialog__actions">
-            <button type="button" class="continue mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised mdl-button--colored">Continue</button>
+        <div id="access_cont" class="cont">
+            <div id="access_req" class="grow">
+                <div class="center">Please scan<br>access QR code</div>
+            </div>
         </div>
-    </dialog>
+    </div>
 </body>
+
 </html>

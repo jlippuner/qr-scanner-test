@@ -1,13 +1,15 @@
 {
   "name": "acf-qr-scanner",
   "version": "1.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "corepack": "^0.10.0"
+  },
   "devDependencies": {
     "del": "^6.1.0",
     "gulp": "^4.0.2",
-    "gulp-gh-pages": "^0.5.4",
     "gulp-connect": "^5.7.0",
     "gulp-copy": "^4.0.1",
+    "gulp-gh-pages": "^0.5.4",
     "path": "^0.12.7",
     "sw-precache": "^5.2.1"
   },
