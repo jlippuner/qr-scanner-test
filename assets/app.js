@@ -12,20 +12,8 @@ window.addEventListener('DOMContentLoaded', function () {
     const video = document.getElementById('camera');
     const overlay = document.getElementById('snapshotLimitOverlay');
     const flipCameraButton = document.getElementById("flipCamera");
-    const loadingElement = document.getElementById('loading');
-    const resultContainer = document.getElementById('result');
-    const resultDialog = document.querySelector('dialog');
-    const resultSearchGo = document.querySelector('dialog a.search');
-
-    // init dialog
-    dialogPolyfill.registerDialog(resultDialog);
-    resultDialog.querySelector('button.continue').addEventListener('click', function() {
-        resultDialog.close();
-        resultContainer.innerText = "";
-        flipCameraButton.disabled = false;
-        scanCode(true);
-    });
-    new ClipboardJS('dialog button.copy');
+    const res_name = document.getElementById('res_name');
+    const res_entry = document.getElementById('res_entry');
 
     // init QRCode Web Worker
     const qrcodeWorker = new Worker("assets/qrcode_worker.js");
@@ -50,12 +38,8 @@ window.addEventListener('DOMContentLoaded', function () {
         setTimeout(function() {
             if (flipCameraButton.disabled) {
                 // terminate this loop
-                loadingElement.style.display = "none";
                 return;
             }
-
-            // show loading
-            loadingElement.style.display = "block";
 
             // capture current snapshot
             snapshotContext.drawImage(video, snapshotSquare.x, snapshotSquare.y, snapshotSquare.size, snapshotSquare.size, 0, 0, snapshotSquare.size, snapshotSquare.size);
@@ -74,39 +58,13 @@ window.addEventListener('DOMContentLoaded', function () {
     function showResult (e) {
         const resultData = e.data;
 
-        console.log(e);
-
         // open a dialog with the result if found
         if (resultData !== false) {
             navigator.vibrate(200); // vibration is not supported on Edge, IE, Opera and Safari
-            disableUI();
-
-            try {
-                url = new URL(resultData);
-                let linkToResult = document.createElement('a');
-                linkToResult.href = url;
-                linkToResult.innerText = resultData;
-                resultContainer.appendChild(linkToResult);
-
-                resultSearchGo.href = url;
-                resultSearchGo.innerText = "Go";
-            } catch (e) {
-                resultContainer.innerText = resultData;
-
-                resultSearchGo.href = "https://www.google.com/search?q=" + encodeURIComponent(resultData);
-                resultSearchGo.innerText = "Search";
-            }
-
-            resultDialog.showModal();
-        } else {
-            // if not found, retry
-            scanCode();
+            res_name.innerText = resultData;
         }
-    }
 
-    function disableUI () {
-        flipCameraButton.disabled = true;
-        loadingElement.style.display = "none";
+        scanCode();
     }
 
     // init video stream
@@ -136,8 +94,6 @@ window.addEventListener('DOMContentLoaded', function () {
     initVideoStream();
 
     function stopStream() {
-        disableUI();
-
         if (video.srcObject) {
             video.srcObject.getTracks()[0].stop();
         }
