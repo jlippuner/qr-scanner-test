@@ -36,13 +36,8 @@
         }
     </script>
 
-    <link rel="stylesheet" type="text/css" href="assets/lib/dialog-polyfill/dist/dialog-polyfill.css" />
     <link rel="stylesheet" href="assets/lib/material-design-lite/material.min.css">
     <link rel="stylesheet" href="assets/style.css">
-
-    <script src="assets/lib/dialog-polyfill/dist/dialog-polyfill.js"></script>
-    <script src="assets/lib/material-design-lite/material.min.js"></script>
-    <script src="assets/lib/clipboard/dist/clipboard.min.js"></script>
     <script src="assets/app.js"></script>
 </head>
 
@@ -68,24 +63,19 @@
             <div id="event_cont">
                 <label for="event">Current event: </label>
                 <select name="event" id="event">
-                    <option value="ev1">Event 1</option>
-                    <option value="ev2">Event 2</option>
-                    <option value="ev3">Event 3</option>
-                    <option value="ev4">Event 4</option>
+                    <option value="undef">Please select event</option>
                 </select>
             </div>
 
             <div class="grow">
-                <div class="center" id="res_name">Title VeryLongFirstName VeryLongLastName</div>
+                <div class="center" id="res_name"></div>
             </div>
 
-            <div id="res_entry">
-                Entry OK
-            </div>
+            <div id="res_entry"></div>
         </div>
         <div id="access_cont" class="cont">
-            <div id="access_req" class="grow">
-                <div class="center">Please scan<br>access QR code</div>
+            <div class="grow">
+                <div id="access_req" class="center">Please scan<br>access QR code</div>
             </div>
         </div>
     </div>

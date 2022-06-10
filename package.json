@@ -2,7 +2,8 @@
   "name": "acf-qr-scanner",
   "version": "1.0.0",
   "dependencies": {
-    "corepack": "^0.10.0"
+    "corepack": "^0.10.0",
+    "@googleapis/sheets": "^2.0.1"
   },
   "devDependencies": {
     "del": "^6.1.0",
