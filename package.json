@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "corepack": "^0.10.0",
-    "@googleapis/sheets": "^2.0.1"
+    "google-spreadsheet": "^3.3.0"
   },
   "devDependencies": {
     "del": "^6.1.0",
@@ -12,7 +12,8 @@
     "gulp-copy": "^4.0.1",
     "gulp-gh-pages": "^0.5.4",
     "path": "^0.12.7",
-    "sw-precache": "^5.2.1"
+    "sw-precache": "^5.2.1",
+    "browserify": "^17.0.0"
   },
   "overrides": {
     "graceful-fs": "^4.2.9",

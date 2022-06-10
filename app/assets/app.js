@@ -1,3 +1,5 @@
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+
 window.addEventListener('DOMContentLoaded', function () {
     if (!('mediaDevices' in navigator &&
         'getUserMedia' in navigator.mediaDevices &&
@@ -25,6 +27,7 @@ window.addEventListener('DOMContentLoaded', function () {
     const red = '#e04040';
 
     var active = false;
+    var doc = null;
 
     function update_ui() {
         board.style.backgroundColor = gray;
@@ -33,8 +36,28 @@ window.addEventListener('DOMContentLoaded', function () {
         access_cont.style.display = active ? 'none' : 'flex';
     }
 
+    // create Google Sheets API
+    function make_sheet_api() {
+        if (!active) {
+            doc = null;
+            return;
+        }
+
+        try {
+            doc  = new GoogleSpreadsheet(sheet_id);
+            (async function() {
+                doc.useApiKey(api_key);
+                await doc.loadInfo();
+            }());
+        } catch (ex) {
+            console.log('make_sheet_api: ', ex);
+            doc = null;
+        }
+    }
+
     // local storage
     var sheet_id = this.localStorage.getItem('sheet_id');
+    var api_key = this.localStorage.getItem('api_key');
 
     function load_json(key) {
         let val = localStorage.getItem(key);
@@ -63,6 +86,7 @@ window.addEventListener('DOMContentLoaded', function () {
     var curr_result = '';
 
     update_ui();
+    make_sheet_api();
 
     // init QRCode Web Worker
     const qrcodeWorker = new Worker('assets/qrcode_worker.js');
@@ -115,13 +139,11 @@ window.addEventListener('DOMContentLoaded', function () {
                 navigator.vibrate(200);
                 curr_result = res;
 
-                let dat = res.toLowerCase();
-
                 // decide what to do with the result
-                if (dat.startsWith('docid:')) {
-                    load_config(dat);
+                if (dat.startsWith('{"api":')) {
+                    load_config(res);
                 } else {
-                    process_signin(dat);
+                    process_signin(res);
                 }
             }
 
@@ -132,32 +154,47 @@ window.addEventListener('DOMContentLoaded', function () {
 
     }
 
-    function load_config(url) {
+    function load_config(dat) {
         access_req.innerText = 'Loading...';
-        let ok = true;
 
-        if (url.startsWith('docid:')) {
-            sid = url.substring(6);
-            console.log('Got doc id: ' + sid);
-        } else {
-            ok = false;
-        }
+        try {
+            if (!dat.startsWith('{"api":')) {
+                throw 'Invalid data';
+            }
 
-        // read sheet
-        if (ok) {
-            
-        }
+            const j = JSON.parse(dat);
+            console.log(dat);
+            console.log(JSON.stringify(j));
+            sid = j['doc'];
+            key = j['api'];
 
-        ok = false;
+            if (sid === undefined) {
+                throw 'Could not get sheet id';
+            }
 
-        if (ok) {
+            if (key === undefined) {
+                throw 'Could not get API key';
+            }
+
+            api_key = key;
             sheet_id = sid;
-        } else {
+
+            make_sheet_api();
+
+            if (doc == null) {
+                throw 'Failed to create Sheets API';
+            }
+
+            console.log(doc.title);
+        } catch (ex) {
+            console.log("Exception in load_config: ", ex);
             sheet_id = null;
+            api_key = null;
             access_req.innerHTML = 'Please scan<br>access QR code';
         }
 
         localStorage.setItem('sheet_id', sheet_id);
+        localStorage.setItem('api_key', api_key);
         store_json('events', events);
         store_json('people', people);
 

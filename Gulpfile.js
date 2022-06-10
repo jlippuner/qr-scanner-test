@@ -5,6 +5,7 @@ const del = require('del');
 const ghPages = require('gulp-gh-pages');
 const path = require('path');
 const swPrecache = require('sw-precache');
+const browserify = require('browserify');
 
 const DEV_DIR = 'app';
 const DIST_DIR = 'dist';
@@ -40,6 +41,23 @@ gulp.task('clean', function() {
   return del([DIST_DIR]);
 });
 
+function get_browserify(enable_debug) {
+  return browserify({
+    entries: 'app/assets/app.js',
+    debug: enable_debug
+  });
+}
+
+gulp.task('browserify-debug', function() {
+  b = get_browserify(true);
+  return b.bundle();
+});
+
+gulp.task('browserify', function() {
+  b = get_browserify(false);
+  return b.bundle();
+});
+
 gulp.task('generate-service-worker-dev', function() {
   return writeServiceWorkerFile(DEV_DIR, false);
 });
@@ -53,11 +71,11 @@ gulp.task('copy-dev-to-dist', function() {
       .pipe(copy(DIST_DIR, {prefix: 1}));
 });
 
-gulp.task('build-dev', gulp.series('generate-service-worker-dev'));
+gulp.task('build-dev', gulp.series('browserify-debug', 'generate-service-worker-dev'));
 
 gulp.task(
     'build-dist',
-    gulp.series('copy-dev-to-dist', 'generate-service-worker-dist'));
+    gulp.series('browserify', 'copy-dev-to-dist', 'generate-service-worker-dist'));
 
 
 gulp.task('serve-dev', gulp.series('build-dev', function() {
