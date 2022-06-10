@@ -6,6 +6,9 @@ const ghPages = require('gulp-gh-pages');
 const path = require('path');
 const swPrecache = require('sw-precache');
 const browserify = require('browserify');
+var tap = require('gulp-tap');
+var buffer = require('gulp-buffer');
+var sourcemaps = require('gulp-sourcemaps');
 
 const DEV_DIR = 'app';
 const DIST_DIR = 'dist';
@@ -41,21 +44,28 @@ gulp.task('clean', function() {
   return del([DIST_DIR]);
 });
 
-function get_browserify(enable_debug) {
-  return browserify({
-    entries: 'app/assets/app.js',
-    debug: enable_debug
-  });
+function bundle(enable_debug) {
+  return gulp.src('app/app.js', {read: false}) // no need of reading file because browserify does.
+    // transform file objects using gulp-tap plugin
+    .pipe(tap(function (file) {
+      // replace file contents with browserify's bundle stream
+      file.contents = browserify(file.path, {debug: enable_debug}).bundle();
+    }))
+    // transform streaming contents into buffer contents (because gulp-sourcemaps does not support streaming contents)
+    .pipe(buffer())
+    // load and init sourcemaps
+    .pipe(sourcemaps.init({loadMaps: true}))
+    // write sourcemaps
+    .pipe(sourcemaps.write('./'))
+    .pipe(gulp.dest('app/assets'));
 }
 
 gulp.task('browserify-debug', function() {
-  b = get_browserify(true);
-  return b.bundle();
+  return bundle(true);
 });
 
 gulp.task('browserify', function() {
-  b = get_browserify(false);
-  return b.bundle();
+  return bundle(false);
 });
 
 gulp.task('generate-service-worker-dev', function() {
