@@ -46,9 +46,9 @@ function process(input) {
         result = qrcode.process();
     } catch (e) {}
 
-    if (result !== false) {
-        result += "\nVer: " + qrcode.version.versionNumber + ", EC: " + qrcode.ecLevel.name;
-    }
+    // if (result !== false) {
+    //     result += "\nVer: " + qrcode.version.versionNumber + ", EC: " + qrcode.ecLevel.name;
+    // }
 
     postMessage(result);
 }
