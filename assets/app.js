@@ -43,8 +43,8 @@ window.addEventListener("DOMContentLoaded", function () {
       ? "Loading..."
       : "Please scan<br>access QR code";
 
-    res_name = "";
-    res_entry = "";
+    res_name.innerText = "";
+    res_entry.innerText = "";
 
     const active =
       !loading &&
