@@ -14,19 +14,24 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   // html elements
-  const snapshotCanvas = document.getElementById("snapshot");
+  const snapshotCanvas = this.document.getElementById("snapshot");
   const snapshotContext = snapshotCanvas.getContext("2d");
-  const video = document.getElementById("camera");
-  const overlay = document.getElementById("snapshotLimitOverlay");
-  const flipCameraButton = document.getElementById("flipCamera");
+  const video = this.document.getElementById("camera");
+  const overlay = this.document.getElementById("snapshotLimitOverlay");
+  const flipCameraButton = this.document.getElementById("flipCamera");
+  const reloadButton = this.document.getElementById("reload");
+
+  reloadButton.addEventListener("click", function () {
+    load_config();
+  });
 
   const board = this.document.getElementById("board");
   const event_sel = this.document.getElementById("event");
   const res_cont = this.document.getElementById("res_cont");
   const access_cont = this.document.getElementById("access_cont");
   const access_req = this.document.getElementById("access_req");
-  const res_name = document.getElementById("res_name");
-  const res_entry = document.getElementById("res_entry");
+  const res_name = this.document.getElementById("res_name");
+  const res_entry = this.document.getElementById("res_entry");
 
   const gray = "#ccc";
   const green = "#40c040";
@@ -56,6 +61,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
     res_cont.style.display = active ? "flex" : "none";
     access_cont.style.display = active ? "none" : "flex";
+
+    reloadButton.disabled = !active;
 
     if (active) {
       // event selector, first remove all but first, then add events

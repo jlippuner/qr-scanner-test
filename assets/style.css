@@ -113,7 +113,8 @@ body {
   display: none;
 }
 
-#flipCamera {
+#flipCamera,
+#reload {
   position: absolute;
   background-color: #eee;
 }
@@ -123,6 +124,13 @@ body {
 
   top: 5vmin;
   right: 5vmin;
+}
+
+#reload {
+  display: block;
+
+  top: 5vmin;
+  left: 5vmin;
 }
 
 #about {
