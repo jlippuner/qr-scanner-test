@@ -78,6 +78,13 @@ body {
   display: none;
 }
 
+.past {
+  color: #888;
+}
+.current {
+  font-weight: bold;
+}
+
 #access_req {
   line-height: 200%;
   font-weight: bold;
