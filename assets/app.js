@@ -69,14 +69,24 @@ window.addEventListener("DOMContentLoaded", function () {
       for (let i = event_sel.options.length - 1; i > 0; i--) {
         event_sel.remove(i);
       }
+      const now = new Date();
+      let current = "undefined";
       for (const [id, e] of Object.entries(events)) {
         let op = document.createElement("option");
         op.text = e.name;
         op.value = id;
+
+        if (e.end < now) {
+          op.classList.add("past");
+        } else if ((e.start <= now) && (e.end > now)) {
+          op.classList.add("current");
+          current = id;
+        }
+
         event_sel.add(op);
       }
 
-      // TODO select current event, highlight current event
+      event_sel.value = current;
     }
   }
 
