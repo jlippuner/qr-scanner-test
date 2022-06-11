@@ -35,6 +35,7 @@ function serve(rootDir) {
 function writeServiceWorkerFile(rootDir, handleFetch) {
   return swPrecache.write(path.join(rootDir, "service-worker.js"), {
     handleFetch: handleFetch,
+    maximumFileSizeToCacheInBytes: 128 * 1024 * 1024,
     staticFileGlobs: getAssets(rootDir),
     stripPrefix: rootDir + "/",
   });
