@@ -31,9 +31,10 @@ window.addEventListener('DOMContentLoaded', function () {
     var doc = new GoogleSpreadsheet()
     var loading = false;
 
-    function update_ui() {
+    function update_ui(is_loading) {
         board.style.backgroundColor = gray;
-        access_req.innerHTML = 'Please scan<br>access QR code';
+        loading = is_loading;
+        access_req.innerHTML = loading ? 'Loading...' : 'Please scan<br>access QR code';
 
         // event selector, first remove all but first, then add events
         for (let i = event_sel.options.length - 1; i > 0; i--) {
@@ -48,12 +49,9 @@ window.addEventListener('DOMContentLoaded', function () {
 
         // TODO select current event, highlight current event
 
-        const active = (sheet_id != null);
-
+        const active = !loading && doc_inited && (sheet_id != null) && (api_key != null) && (Object.keys(events).length > 0) && (Object.keys(people).length > 0);
         res_cont.style.display = active ? 'flex' : 'none';
         access_cont.style.display = active ? 'none' : 'flex';
-
-        loading = false;
     }
 
     // create Google Sheets API
@@ -104,11 +102,11 @@ window.addEventListener('DOMContentLoaded', function () {
     var curr_result = '';
 
     make_sheet_api();
-    update_ui();
+    update_ui(false);
 
     // init QRCode Web Worker
     const qrcodeWorker = new Worker('assets/qrcode_worker.js');
-    qrcodeWorker.postMessage({cmd: 'init'});
+    qrcodeWorker.postMessage({ cmd: 'init' });
     qrcodeWorker.addEventListener('message', process_qr);
 
     let snapshotSquare;
@@ -116,8 +114,8 @@ window.addEventListener('DOMContentLoaded', function () {
         // get square of snapshot in the video
         let snapshotSize = overlay.offsetWidth;
         snapshotSquare = {
-            'x': ~~((video.videoWidth - snapshotSize)/2),
-            'y': ~~((video.videoHeight - snapshotSize)/2),
+            'x': ~~((video.videoWidth - snapshotSize) / 2),
+            'y': ~~((video.videoHeight - snapshotSize) / 2),
             'size': ~~(snapshotSize)
         };
 
@@ -126,7 +124,7 @@ window.addEventListener('DOMContentLoaded', function () {
     }
 
     function scanCode(wasSuccess) {
-        setTimeout(function() {
+        setTimeout(function () {
             if (flipCameraButton.disabled) {
                 // terminate this loop
                 return;
@@ -146,7 +144,7 @@ window.addEventListener('DOMContentLoaded', function () {
         }, wasSuccess ? 2000 : 120);
     }
 
-    function process_qr (e) {
+    function process_qr(e) {
         const res = e.data;
 
         // open a dialog with the result if found
@@ -159,7 +157,21 @@ window.addEventListener('DOMContentLoaded', function () {
 
                 // decide what to do with the result
                 if (res.startsWith('{"api":')) {
-                    load_config(res).then(update_ui);
+                    try {
+                        const j = JSON.parse(res);
+                        sid = j['doc'];
+                        key = j['api'];
+
+                        if ((sid === undefined) && (key === undefined)) {
+                            throw 'Invalid config';
+                        }
+                        api_key = key;
+                        sheet_id = sid;
+                    } catch (ex) {
+                        api_key = null;
+                        sheet_id = null;
+                    }
+                    load_config();
                 } else {
                     process_signin(res);
                 }
@@ -171,58 +183,74 @@ window.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function load_config(dat) {
-        loading = true;
-        access_req.innerText = 'Loading...';
+    function load_config() {
+        update_ui(true);
+        (async function () {
+            try {
+                make_sheet_api();
 
-        try {
-            if (!dat.startsWith('{"api":')) {
-                throw 'Invalid data';
+                if (!doc_inited) {
+                    throw 'Failed to create Sheets API';
+                }
+
+                await doc.loadInfo();
+                const evs = await doc.sheetsByTitle['Events'].getRows();
+                const reg_sheet = doc.sheetsByTitle['Registrants'];
+                const ps = await reg_sheet.getRows();
+
+                // map header to column index in registrant sheet
+                let reg_cols = {};
+                for (let i = 0; i < reg_sheet.columnCount; i++) {
+                    reg_cols[reg_sheet.headerValues[i]] = i;
+                }
+
+                // read events
+                events = {};
+                const parse_date = function (str) {
+                    const fs = str.split(/[-: ]/);
+                    if (fs.length != 6) {
+                        throw 'Could not parse date string: ' + str;
+                    }
+                    const d = new Date(fs[0], fs[1] - 1, fs[2], fs[3], fs[4], fs[5]);
+                    if (d.toString() == "Invalid Date") {
+                        throw 'Invalid date string: ' + str;
+                    }
+                    return d;
+                };
+
+                for (let i = 0; i < evs.length; i++) {
+                    e = evs[i];
+                    let c = -1;
+                    if (e.name in reg_cols) {
+                        c = reg_cols[e.name];
+                    } else {
+                        continue;
+                    }
+                    events[e.id] = { col: c, name: e.name, start: parse_date(e.start), end: parse_date(e.end) };
+                }
+                console.log(events);
+
+                // read people
+                people = {};
+                for (let i = 0; i < ps.length; i++) {
+                    p = ps[i];
+                    people[p.id] = { row: i, name: p.first + ' ' + p.last, tickets: p.tickets };
+                }
+                console.log(people);
+            } catch (ex) {
+                console.log("Exception in load_config: ", ex);
+                sheet_id = null;
+                api_key = null;
+                doc_inited = false;
+                events = {};
+                people = {};
             }
 
-            const j = JSON.parse(dat);
-            console.log(dat);
-            sid = j['doc'];
-            key = j['api'];
-
-            if (sid === undefined) {
-                throw 'Could not get sheet id';
-            }
-
-            if (key === undefined) {
-                throw 'Could not get API key';
-            }
-
-            api_key = key;
-            sheet_id = sid;
-
-            make_sheet_api();
-
-            if (!doc_inited) {
-                throw 'Failed to create Sheets API';
-            }
-
-            await doc.loadInfo();
-            let es = doc.sheetsByTitle['Events'];
-            const rows = await es.getRows();
-
-            events = {};
-            for (let i = 0; i < rows.length; i++) {
-                e = rows[i];
-                events[e.id] = {col: -1, name: e.name, start: e.start, end: e.end};
-            }
-        } catch (ex) {
-            console.log("Exception in load_config: ", ex);
-            sheet_id = null;
-            api_key = null;
-            events = {};
-            people = {};
-        }
-
-        localStorage.setItem('sheet_id', sheet_id);
-        localStorage.setItem('api_key', api_key);
-        store_json('events', events);
-        store_json('people', people);
+            localStorage.setItem('sheet_id', sheet_id);
+            localStorage.setItem('api_key', api_key);
+            store_json('events', events);
+            store_json('people', people);
+        }()).then(function () { update_ui(false); });
     }
 
     function process_signin(dat) {
@@ -235,12 +263,12 @@ window.addEventListener('DOMContentLoaded', function () {
 
     // init video stream
     let currentDeviceId;
-    function initVideoStream () {
+    function initVideoStream() {
         let config = {
             audio: false,
             video: {}
         };
-        config.video = currentDeviceId ? {deviceId: currentDeviceId} : {facingMode: 'environment'};
+        config.video = currentDeviceId ? { deviceId: currentDeviceId } : { facingMode: 'environment' };
 
         stopStream();
 
@@ -248,7 +276,7 @@ window.addEventListener('DOMContentLoaded', function () {
             document.getElementById('about').style.display = 'none';
 
             video.srcObject = stream;
-            video.oncanplay = function() {
+            video.oncanplay = function () {
                 flipCameraButton.disabled = false;
                 calculateSquare();
                 scanCode();
@@ -270,33 +298,33 @@ window.addEventListener('DOMContentLoaded', function () {
 
     // add flip camera button if necessary
     navigator.mediaDevices.enumerateDevices()
-    .then(function(devices) {
-        devices = devices.filter(function (device) {
-            return device.kind === 'videoinput';
+        .then(function (devices) {
+            devices = devices.filter(function (device) {
+                return device.kind === 'videoinput';
+            });
+
+            if (devices.length > 1) {
+                // add a flip camera button
+                flipCameraButton.style.display = 'block';
+
+                currentDeviceId = devices[0].deviceId; // no way to know current MediaStream's device id so arbitrarily choose the first
+
+                flipCameraButton.addEventListener('click', function () {
+                    let targetDevice;
+                    for (let i = 0; i < devices.length; i++) {
+                        if (devices[i].deviceId === currentDeviceId) {
+                            targetDevice = (i + 1 < devices.length) ? devices[i + 1] : devices[0];
+                            break;
+                        }
+                    }
+                    currentDeviceId = targetDevice.deviceId;
+
+                    initVideoStream();
+                });
+            }
         });
 
-        if (devices.length > 1) {
-            // add a flip camera button
-            flipCameraButton.style.display = 'block';
-
-            currentDeviceId = devices[0].deviceId; // no way to know current MediaStream's device id so arbitrarily choose the first
-
-            flipCameraButton.addEventListener('click', function() {
-                let targetDevice;
-                for (let i = 0; i < devices.length; i++) {
-                    if (devices[i].deviceId === currentDeviceId) {
-                        targetDevice = (i + 1 < devices.length) ? devices[i+1] : devices[0];
-                        break;
-                    }
-                }
-                currentDeviceId = targetDevice.deviceId;
-
-                initVideoStream();
-            });
-        }
-    });
-
-    document.addEventListener('visibilitychange', function() {
+    document.addEventListener('visibilitychange', function () {
         if (document.hidden) {
             stopStream();
         } else {
@@ -306,14 +334,14 @@ window.addEventListener('DOMContentLoaded', function () {
 });
 
 // listen for resize event
-(function() {
-    let throttle = function(type, name, obj) {
+(function () {
+    let throttle = function (type, name, obj) {
         obj = obj || window;
         let running = false;
-        let func = function() {
+        let func = function () {
             if (running) { return; }
             running = true;
-            requestAnimationFrame(function() {
+            requestAnimationFrame(function () {
                 obj.dispatchEvent(new CustomEvent(name));
                 running = false;
             });
