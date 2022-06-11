@@ -43,18 +43,8 @@ window.addEventListener("DOMContentLoaded", function () {
       ? "Loading..."
       : "Please scan<br>access QR code";
 
-    // event selector, first remove all but first, then add events
-    for (let i = event_sel.options.length - 1; i > 0; i--) {
-      event_sel.remove(i);
-    }
-    for (const [id, e] of Object.entries(events)) {
-      let op = document.createElement("option");
-      op.text = e.name;
-      op.value = id;
-      event_sel.add(op);
-    }
-
-    // TODO select current event, highlight current event
+    res_name = "";
+    res_entry = "";
 
     const active =
       !loading &&
@@ -63,8 +53,24 @@ window.addEventListener("DOMContentLoaded", function () {
       api_key != null &&
       Object.keys(events).length > 0 &&
       Object.keys(people).length > 0;
+
     res_cont.style.display = active ? "flex" : "none";
     access_cont.style.display = active ? "none" : "flex";
+
+    if (active) {
+      // event selector, first remove all but first, then add events
+      for (let i = event_sel.options.length - 1; i > 0; i--) {
+        event_sel.remove(i);
+      }
+      for (const [id, e] of Object.entries(events)) {
+        let op = document.createElement("option");
+        op.text = e.name;
+        op.value = id;
+        event_sel.add(op);
+      }
+
+      // TODO select current event, highlight current event
+    }
   }
 
   // create Google Sheets API
