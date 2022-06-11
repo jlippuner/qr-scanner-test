@@ -77,9 +77,13 @@ window.addEventListener("DOMContentLoaded", function () {
 
         if (e.end < now) {
           op.classList.add("past");
+          op.text += " ~ PAST";
         } else if ((e.start <= now) && (e.end > now)) {
           op.classList.add("current");
           current = id;
+          op.text += " ~ NOW";
+        } else {
+          op.text += " ~ FUTURE";
         }
 
         event_sel.add(op);
@@ -126,6 +130,10 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // { id: {col=x, name='...', start=..., end=...}, ... }
   var events = load_json("events");
+  for (const [id, e] of Object.entries(events)) {
+    events[id].start = new Date(e.start);
+    events[id].end = new Date(e.end);
+  }
 
   // { id: {row=x, name='...', tickets=... }, ... }
   var people = load_json("people");
