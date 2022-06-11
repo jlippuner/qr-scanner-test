@@ -21,6 +21,7 @@ window.addEventListener("DOMContentLoaded", function () {
   const reloadButton = this.document.getElementById("reload");
 
   reloadButton.addEventListener("click", function () {
+    curr_result = null;
     load_config();
   });
 
@@ -32,6 +33,17 @@ window.addEventListener("DOMContentLoaded", function () {
   const res_name = this.document.getElementById("res_name");
   const res_entry = this.document.getElementById("res_entry");
 
+  function set_res(color, name, entry) {
+    board.style.backgroundColor = color;
+    res_name.innerText = name;
+    res_entry.innerText = entry;
+  }
+
+  event_sel.addEventListener("change", function () {
+    curr_result = null;
+    set_res(gray, "", "");
+  });
+
   const gray = "#ccc";
   const green = "#40c040";
   const red = "#e04040";
@@ -39,6 +51,7 @@ window.addEventListener("DOMContentLoaded", function () {
   var doc_inited = false;
   var doc = new GoogleSpreadsheet();
   var loading = false;
+  var active = false;
 
   function update_ui(is_loading) {
     board.style.backgroundColor = gray;
@@ -50,7 +63,7 @@ window.addEventListener("DOMContentLoaded", function () {
     res_name.innerText = "";
     res_entry.innerText = "";
 
-    const active =
+    active =
       !loading &&
       doc_inited &&
       sheet_id != null &&
@@ -78,7 +91,7 @@ window.addEventListener("DOMContentLoaded", function () {
         if (e.end < now) {
           op.classList.add("past");
           op.text += " ~ PAST";
-        } else if ((e.start <= now) && (e.end > now)) {
+        } else if (e.start <= now && e.end > now) {
           op.classList.add("current");
           current = id;
           op.text += " ~ NOW";
@@ -325,12 +338,54 @@ window.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function set_res(color, name, entry) {
+    board.style.backgroundColor = color;
+    res_name.innerText = name;
+    res_entry.innerText = entry;
+  }
+
   function process_signin(dat) {
     if (!active) {
       return;
     }
-    // TODO
-    res_name.innerText = dat;
+
+    // get id
+    let id = null;
+    if (dat.startsWith("ID:")) {
+      id = dat.substring(3);
+    } else if (dat.startsWith("MECARD:")) {
+      const pos = dat.indexOf(";;ID:");
+      if (pos > 0) {
+        id = dat.substring(pos + 5);
+      }
+    }
+
+    if (id == null) {
+      return;
+    }
+
+    // get event
+    if (event_sel.value == "undefined") {
+      set_res(red, "SELECT EVENT", "");
+      return;
+    }
+    const event_id = parseInt(event_sel.value);
+
+    if (!(id in people)) {
+      // this person doesn't exist
+      set_res(red, "UNKNOWN PERSON", "Please reload");
+    } else {
+      // we know this person
+      p = people[id];
+      const allowed = (p.tickets & (1 << event_id)) > 0;
+      set_res(
+        allowed ? green : red,
+        p.name,
+        "Entry " + (allowed ? "OK" : "DENIED")
+      );
+
+      // TODO record result in sheet
+    }
   }
 
   // init video stream
