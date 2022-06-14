@@ -1,5 +1,19 @@
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
+function load_json(key) {
+  let val = localStorage.getItem(key);
+  if (val != null) {
+    return JSON.parse(val);
+  } else {
+    return {};
+  }
+}
+
+function store_json(key, obj) {
+  let val = JSON.stringify(obj);
+  localStorage.setItem(key, val);
+}
+
 window.addEventListener("DOMContentLoaded", function () {
   if (
     !(
@@ -32,6 +46,7 @@ window.addEventListener("DOMContentLoaded", function () {
   const access_req = this.document.getElementById("access_req");
   const res_name = this.document.getElementById("res_name");
   const res_entry = this.document.getElementById("res_entry");
+  const tosync = this.document.getElementById("tosync");
 
   function set_res(color, name, entry) {
     board.style.backgroundColor = color;
@@ -62,6 +77,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
     res_name.innerText = "";
     res_entry.innerText = "";
+
+    update_num_sync();
 
     active =
       !loading &&
@@ -125,21 +142,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // local storage
   var sheet_id = this.localStorage.getItem("sheet_id");
+  var curr_sheet_id = sheet_id;
   var api_key = this.localStorage.getItem("api_key");
-
-  function load_json(key) {
-    let val = localStorage.getItem(key);
-    if (val != null) {
-      return JSON.parse(val);
-    } else {
-      return null;
-    }
-  }
-
-  function store_json(key, obj) {
-    let val = JSON.stringify(obj);
-    localStorage.setItem(key, val);
-  }
 
   // { id: {col=x, name='...', start=..., end=...}, ... }
   var events = load_json("events");
@@ -151,19 +155,41 @@ window.addEventListener("DOMContentLoaded", function () {
   // { id: {row=x, name='...', tickets=... }, ... }
   var people = load_json("people");
 
-  // TBD
-  var unsent = load_json("unsent");
+  // unique id is a unique identifier (using Date.now())
+  // { unique_id: { row: x, col: x, time: ..., ok: true/false}, ... }
+  var pending = load_json("pending");
+  if (pending == null) {
+    pending = {};
+  }
+
+  function update_num_sync() {
+    tosync.innerText = "To sync: " + Object.keys(pending).length;
+  }
 
   // global vars (not cached)
   var curr_result = "";
-
-  make_sheet_api();
-  update_ui(false);
 
   // init QRCode Web Worker
   const qrcodeWorker = new Worker("assets/qrcode_worker.js");
   qrcodeWorker.postMessage({ cmd: "init" });
   qrcodeWorker.addEventListener("message", process_qr);
+
+  // init Sync Web Worker
+  const sync_worker = new Worker("assets/sync_worker.js");
+  sync_worker.addEventListener("message", process_sync);
+  sync_worker.postMessage({ cmd: "init", pend: pending });
+
+  function process_sync(e) {
+    const id = e.data;
+    if (id in pending) {
+      delete pending[id];
+    }
+    store_json("pending", pending);
+    update_num_sync();
+  }
+
+  make_sheet_api();
+  update_ui(false);
 
   let snapshotSquare;
   function calculateSquare() {
@@ -314,7 +340,7 @@ window.addEventListener("DOMContentLoaded", function () {
         for (let i = 0; i < ps.length; i++) {
           p = ps[i];
           people[p.id] = {
-            row: i,
+            row: i + 1,
             name: p.first + " " + p.last,
             tickets: p.tickets,
           };
@@ -327,12 +353,19 @@ window.addEventListener("DOMContentLoaded", function () {
         doc_inited = false;
         events = {};
         people = {};
+        pending = {};
       }
 
       localStorage.setItem("sheet_id", sheet_id);
       localStorage.setItem("api_key", api_key);
       store_json("events", events);
       store_json("people", people);
+
+      // if this is a different sheet, clear the pending results
+      if (curr_sheet_id != sheet_id) {
+        pending = {};
+        curr_sheet_id = sheet_id;
+      }
     })().then(function () {
       update_ui(false);
     });
@@ -370,6 +403,9 @@ window.addEventListener("DOMContentLoaded", function () {
       return;
     }
     const event_id = parseInt(event_sel.value);
+    const event = events[event_id];
+
+    let allowed = false;
 
     if (!(id in people)) {
       // this person doesn't exist
@@ -377,14 +413,46 @@ window.addEventListener("DOMContentLoaded", function () {
     } else {
       // we know this person
       p = people[id];
-      const allowed = (p.tickets & (1 << event_id)) > 0;
+      allowed = (p.tickets & (1 << event_id)) > 0;
       set_res(
         allowed ? green : red,
         p.name,
         "Entry " + (allowed ? "OK" : "DENIED")
       );
 
-      // TODO record result in sheet
+      const p0 = (num, places) => String(num).padStart(places, "0");
+      const n = new Date();
+      const now_str =
+        p0(n.getFullYear(), 4) +
+        "-" +
+        p0(n.getMonth() + 1, 2) +
+        "-" +
+        p0(n.getDate(), 2) +
+        " " +
+        p0(n.getHours(), 2) +
+        ":" +
+        p0(n.getMinutes(), 2) +
+        ":" +
+        p0(n.getSeconds(), 2) +
+        "." +
+        p0(n.getMilliseconds(), 3);
+
+      const sid = Date.now();
+      let sync = {};
+      sync[sid] = {
+        row: p.row,
+        col: event.col,
+        time: now_str,
+        ok: allowed,
+      };
+
+      sync_worker.postMessage({
+        cmd: "add",
+        sync: sync,
+      });
+      Object.assign(pending, sync);
+      store_json("pending", pending);
+      update_num_sync();
     }
   }
 

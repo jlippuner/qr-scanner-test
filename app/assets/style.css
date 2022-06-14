@@ -39,8 +39,9 @@ body {
   flex-direction: column;
 }
 
-#event_cont {
-  padding: 25px 0;
+#event_cont,
+#tosync {
+  padding: 20px 0;
 }
 
 #event {
