@@ -1,6 +1,44 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
+function load_json(key) {
+  let val = localStorage.getItem(key);
+  if (val != null) {
+    return JSON.parse(val);
+  } else {
+    return null;
+  }
+}
+
+function store_json(key, obj) {
+  let val = JSON.stringify(obj);
+  localStorage.setItem(key, val);
+}
+
+function set_num_sync(num) {
+  this.document.getElementById("tosync").innerText = "To sync: " + num;
+}
+
+self.addEventListener("sync", function (event) {
+  if (event.tag == "sync_pending") {
+    event.waitUntil(do_sync());
+  }
+});
+
+function do_sync() {
+  let pending = load_json("pending");
+  if (pending == null || pending.length == 0) {
+    console.log("Nothing to sync");
+    set_num_sync(0);
+  } else {
+    const s = pending[0];
+    console.log("Syncing ", s);
+    pending.shift();
+    store_json("pending", pending);
+    set_num_sync(pending.length);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", function () {
   if (
     !(
@@ -33,6 +71,7 @@ window.addEventListener("DOMContentLoaded", function () {
   const access_req = this.document.getElementById("access_req");
   const res_name = this.document.getElementById("res_name");
   const res_entry = this.document.getElementById("res_entry");
+  const tosync = this.document.getElementById("tosync");
 
   function set_res(color, name, entry) {
     board.style.backgroundColor = color;
@@ -63,6 +102,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
     res_name.innerText = "";
     res_entry.innerText = "";
+
+    set_num_sync(pending.length);
 
     active =
       !loading &&
@@ -126,21 +167,8 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // local storage
   var sheet_id = this.localStorage.getItem("sheet_id");
+  var curr_sheet_id = sheet_id;
   var api_key = this.localStorage.getItem("api_key");
-
-  function load_json(key) {
-    let val = localStorage.getItem(key);
-    if (val != null) {
-      return JSON.parse(val);
-    } else {
-      return null;
-    }
-  }
-
-  function store_json(key, obj) {
-    let val = JSON.stringify(obj);
-    localStorage.setItem(key, val);
-  }
 
   // { id: {col=x, name='...', start=..., end=...}, ... }
   var events = load_json("events");
@@ -152,8 +180,11 @@ window.addEventListener("DOMContentLoaded", function () {
   // { id: {row=x, name='...', tickets=... }, ... }
   var people = load_json("people");
 
-  // TBD
-  var unsent = load_json("unsent");
+  // [ { event_id: x, person_id: x, time: ..., ok: true/false} ]
+  var pending = load_json("pending");
+  if (pending == null) {
+    pending = [];
+  }
 
   // global vars (not cached)
   var curr_result = "";
@@ -328,12 +359,19 @@ window.addEventListener("DOMContentLoaded", function () {
         doc_inited = false;
         events = {};
         people = {};
+        pending = [];
       }
 
       localStorage.setItem("sheet_id", sheet_id);
       localStorage.setItem("api_key", api_key);
       store_json("events", events);
       store_json("people", people);
+
+      // if this is a different sheet, clear the pending results
+      if (curr_sheet_id != sheet_id) {
+        pending = [];
+        curr_sheet_id = sheet_id;
+      }
     })().then(function () {
       update_ui(false);
     });
@@ -372,20 +410,52 @@ window.addEventListener("DOMContentLoaded", function () {
     }
     const event_id = parseInt(event_sel.value);
 
+    let allowed = false;
+
     if (!(id in people)) {
       // this person doesn't exist
       set_res(red, "UNKNOWN PERSON", "Please reload");
     } else {
       // we know this person
       p = people[id];
-      const allowed = (p.tickets & (1 << event_id)) > 0;
+      allowed = (p.tickets & (1 << event_id)) > 0;
       set_res(
         allowed ? green : red,
         p.name,
         "Entry " + (allowed ? "OK" : "DENIED")
       );
 
-      // TODO record result in sheet
+      const p0 = (num, places) => String(num).padStart(places, "0");
+      const n = new Date();
+      const now_str =
+        p0(n.getFullYear(), 4) +
+        "-" +
+        p0(n.getMonth() + 1, 2) +
+        "-" +
+        p0(n.getDate(), 2) +
+        " " +
+        p0(n.getHours(), 2) +
+        ":" +
+        p0(n.getMinutes(), 2) +
+        ":" +
+        p0(n.getSeconds(), 2) +
+        "." +
+        p0(n.getMilliseconds(), 3);
+
+      pending.push({
+        event_id: event_id,
+        person_id: id,
+        ok: allowed,
+        time: now_str,
+      });
+
+      console.log(pending);
+
+      store_json("pending", pending);
+      navigator.serviceWorker.ready.then(function (swRegistration) {
+        console.log("Register sync");
+        return swRegistration.sync.register("sync_pending");
+      });
     }
   }
 
