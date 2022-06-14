@@ -1,5 +1,3 @@
-const { GoogleSpreadsheet } = require("google-spreadsheet");
-
 function load_json(key) {
   let val = localStorage.getItem(key);
   if (val != null) {
@@ -64,7 +62,6 @@ window.addEventListener("DOMContentLoaded", function () {
   const red = "#e04040";
 
   var doc_inited = false;
-  var doc = new GoogleSpreadsheet();
   var loading = false;
   var active = false;
 
@@ -123,23 +120,6 @@ window.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // create Google Sheets API
-  function make_sheet_api() {
-    if (sheet_id == null || api_key == null) {
-      doc_inited = false;
-      return;
-    }
-
-    try {
-      doc = new GoogleSpreadsheet(sheet_id);
-      doc.useApiKey(api_key);
-      doc_inited = true;
-    } catch (ex) {
-      console.log("make_sheet_api: ", ex);
-      doc_inited = false;
-    }
-  }
-
   // local storage
   var sheet_id = this.localStorage.getItem("sheet_id");
   var curr_sheet_id = sheet_id;
@@ -176,20 +156,58 @@ window.addEventListener("DOMContentLoaded", function () {
 
   // init Sync Web Worker
   const sync_worker = new Worker("assets/sync_worker.js");
-  sync_worker.addEventListener("message", process_sync);
+  sync_worker.addEventListener("message", process_sync_msg);
   sync_worker.postMessage({ cmd: "init", pend: pending });
 
-  function process_sync(e) {
-    const id = e.data;
-    if (id in pending) {
-      delete pending[id];
+  function process_sync_msg(e) {
+    const input = e.data;
+
+    switch (input.msg) {
+      case "doc_inited":
+        doc_inited = input.data;
+        update_ui(false);
+        break;
+      case "config_loaded":
+        doc_inited = input.ok;
+        events = input.ev;
+        people = input.ppl;
+
+        if (!doc_inited) {
+          sheet_id = null;
+          api_key = null;
+          pending = {};
+          store_json("pending", pending);
+        }
+
+        localStorage.setItem("sheet_id", sheet_id);
+        localStorage.setItem("api_key", api_key);
+        store_json("events", events);
+        store_json("people", people);
+
+        // if this is a different sheet, clear the pending results
+        if (curr_sheet_id != sheet_id) {
+          pending = {};
+          store_json("pending", pending);
+          curr_sheet_id = sheet_id;
+        }
+
+        update_ui(false);
+        break;
+      case "sync_done":
+        const id = input.data;
+        if (id in pending) {
+          delete pending[id];
+        }
+        store_json("pending", pending);
+        update_num_sync();
+        break;
+      default:
+        console.log("Unknown msg from sync worker: ", input.msg);
+        break;
     }
-    store_json("pending", pending);
-    update_num_sync();
   }
 
-  make_sheet_api();
-  update_ui(false);
+  sync_worker.postMessage({ cmd: "make_api", sid: sheet_id, key: api_key });
 
   let snapshotSquare;
   function calculateSquare() {
@@ -285,89 +303,10 @@ window.addEventListener("DOMContentLoaded", function () {
 
   function load_config() {
     update_ui(true);
-    (async function () {
-      try {
-        make_sheet_api();
-
-        if (!doc_inited) {
-          throw "Failed to create Sheets API";
-        }
-
-        await doc.loadInfo();
-        const evs = await doc.sheetsByTitle["Events"].getRows();
-        const reg_sheet = doc.sheetsByTitle["Registrants"];
-        const ps = await reg_sheet.getRows();
-
-        // map header to column index in registrant sheet
-        let reg_cols = {};
-        for (let i = 0; i < reg_sheet.columnCount; i++) {
-          reg_cols[reg_sheet.headerValues[i]] = i;
-        }
-
-        // read events
-        events = {};
-        const parse_date = function (str) {
-          const fs = str.split(/[-: ]/);
-          if (fs.length != 6) {
-            throw "Could not parse date string: " + str;
-          }
-          const d = new Date(fs[0], fs[1] - 1, fs[2], fs[3], fs[4], fs[5]);
-          if (d.toString() == "Invalid Date") {
-            throw "Invalid date string: " + str;
-          }
-          return d;
-        };
-
-        for (let i = 0; i < evs.length; i++) {
-          e = evs[i];
-          let c = -1;
-          if (e.name in reg_cols) {
-            c = reg_cols[e.name];
-          } else {
-            continue;
-          }
-          events[e.id] = {
-            col: c,
-            name: e.name,
-            start: parse_date(e.start),
-            end: parse_date(e.end),
-          };
-        }
-        console.log(events);
-
-        // read people
-        people = {};
-        for (let i = 0; i < ps.length; i++) {
-          p = ps[i];
-          people[p.id] = {
-            row: i + 1,
-            name: p.first + " " + p.last,
-            tickets: p.tickets,
-          };
-        }
-        console.log(people);
-      } catch (ex) {
-        console.log("Exception in load_config: ", ex);
-        sheet_id = null;
-        api_key = null;
-        doc_inited = false;
-        events = {};
-        people = {};
-        pending = {};
-      }
-
-      localStorage.setItem("sheet_id", sheet_id);
-      localStorage.setItem("api_key", api_key);
-      store_json("events", events);
-      store_json("people", people);
-
-      // if this is a different sheet, clear the pending results
-      if (curr_sheet_id != sheet_id) {
-        pending = {};
-        curr_sheet_id = sheet_id;
-      }
-    })().then(function () {
-      update_ui(false);
+    sync_worker.postMessage({
+      cmd: "load_config",
+      sid: sheet_id,
+      key: api_key,
     });
   }
 

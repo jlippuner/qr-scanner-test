@@ -1,7 +1,7 @@
 /app/assets/lib
 /node_modules
 /app/service-worker.js
-/app/assets/app.js*
+/app/assets/sync_worker.js*
 /dist
 yarn.lock
 .publish
