@@ -81,7 +81,7 @@ window.addEventListener("DOMContentLoaded", function () {
       !loading &&
       doc_inited &&
       sheet_id != null &&
-      api_key != null &&
+      key != null &&
       Object.keys(events).length > 0 &&
       Object.keys(people).length > 0;
 
@@ -123,7 +123,7 @@ window.addEventListener("DOMContentLoaded", function () {
   // local storage
   var sheet_id = this.localStorage.getItem("sheet_id");
   var curr_sheet_id = sheet_id;
-  var api_key = this.localStorage.getItem("api_key");
+  var key = load_json("key");
 
   // { id: {col=x, name='...', start=..., end=...}, ... }
   var events = load_json("events");
@@ -174,13 +174,13 @@ window.addEventListener("DOMContentLoaded", function () {
 
         if (!doc_inited) {
           sheet_id = null;
-          api_key = null;
+          key = null;
           pending = {};
           store_json("pending", pending);
         }
 
         localStorage.setItem("sheet_id", sheet_id);
-        localStorage.setItem("api_key", api_key);
+        store_json("key", key);
         store_json("events", events);
         store_json("people", people);
 
@@ -207,7 +207,7 @@ window.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  sync_worker.postMessage({ cmd: "make_api", sid: sheet_id, key: api_key });
+  sync_worker.postMessage({ cmd: "make_api", sid: sheet_id, key: key });
 
   let snapshotSquare;
   function calculateSquare() {
@@ -274,19 +274,21 @@ window.addEventListener("DOMContentLoaded", function () {
         curr_result = res;
 
         // decide what to do with the result
-        if (res.startsWith('{"api":')) {
+        if (res.startsWith('{"key":')) {
           try {
             const j = JSON.parse(res);
             sid = j["doc"];
-            key = j["api"];
+            k = j["key"];
+            kiv = j["iv"];
 
-            if (sid === undefined && key === undefined) {
+            if (sid === undefined || k === undefined || kiv === undefined) {
               throw "Invalid config";
             }
-            api_key = key;
+
+            key = { key: k, iv: kiv };
             sheet_id = sid;
           } catch (ex) {
-            api_key = null;
+            key = null;
             sheet_id = null;
           }
           load_config();
@@ -306,7 +308,7 @@ window.addEventListener("DOMContentLoaded", function () {
     sync_worker.postMessage({
       cmd: "load_config",
       sid: sheet_id,
-      key: api_key,
+      key: key,
     });
   }
 

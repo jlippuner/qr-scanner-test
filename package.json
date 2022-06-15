@@ -6,17 +6,17 @@
     "google-spreadsheet": "^3.3.0"
   },
   "devDependencies": {
+    "browserify": "^17.0.0",
     "del": "^6.1.0",
     "gulp": "^4.0.2",
+    "gulp-buffer": "^0.0.2",
     "gulp-connect": "^5.7.0",
     "gulp-copy": "^4.0.1",
     "gulp-gh-pages": "^0.5.4",
-    "gulp-tap": "^2.0.0",
-    "gulp-buffer": "^0.0.2",
     "gulp-sourcemaps": "^3.0.0",
+    "gulp-tap": "^2.0.0",
     "path": "^0.12.7",
-    "sw-precache": "^5.2.1",
-    "browserify": "^17.0.0"
+    "sw-precache": "^5.2.1"
   },
   "overrides": {
     "graceful-fs": "^4.2.9",
