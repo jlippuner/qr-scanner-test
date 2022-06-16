@@ -405,8 +405,8 @@ window.addEventListener("DOMContentLoaded", function () {
       video: {},
     };
     config.video = currentDeviceId
-      ? { deviceId: currentDeviceId }
-      : { facingMode: "environment" };
+      ? { zoom: true, deviceId: currentDeviceId }
+      : { zoom: true, facingMode: "environment" };
 
     stopStream();
 
@@ -414,6 +414,25 @@ window.addEventListener("DOMContentLoaded", function () {
       .getUserMedia(config)
       .then(function (stream) {
         document.getElementById("about").style.display = "none";
+
+        const [track] = stream.getVideoTracks();
+        const capabilities = track.getCapabilities();
+        const settings = track.getSettings();
+
+        // Check whether zoom is supported or not.
+        if (!("zoom" in settings)) {
+          console.log("Zoom is not supported by " + track.label);
+        } else {
+          // set zoom to 1.5x
+          console.log(
+            "Zoom support, ",
+            capabilities.zoo.min,
+            " to ",
+            capabilities.zoom.max,
+            " with step of ",
+            capabilities.zoom.step
+          );
+        }
 
         video.srcObject = stream;
         video.oncanplay = function () {
