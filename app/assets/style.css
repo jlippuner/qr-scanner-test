@@ -3,7 +3,10 @@ body {
   padding: 0;
 }
 
-#camera {
+#camera,
+#zoom_overlay {
+  touch-action: none;
+
   position: fixed;
   top: 30%;
   left: 50%;
@@ -13,9 +16,12 @@ body {
   width: auto;
   height: 60%;
 
-  z-index: -100;
-
   transform: translateX(-50%) translateY(-50%);
+}
+
+#camera {
+  object-fit: cover;
+  z-index: -100;
 }
 
 #board {
@@ -138,6 +144,16 @@ body {
   display: block;
 
   top: 5vmin;
+  left: 5vmin;
+}
+
+#zoom_val {
+  position: absolute;
+  display: block;
+
+  font-size: large;
+
+  bottom: 20px;
   left: 5vmin;
 }
 
