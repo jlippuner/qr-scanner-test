@@ -12,6 +12,100 @@ function store_json(key, obj) {
   localStorage.setItem(key, val);
 }
 
+// pinch zoom implementation based on
+// https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events/Pinch_zoom_gestures
+
+var pinch_prev_dist = -1;
+var pinch_ev_cache = new Array();
+
+function pointerdown_handler(ev) {
+  // console.log("pointer down: ", ev);
+  // The pointerdown event signals the start of a touch interaction.
+  // This event is cached to support 2-finger gestures
+  pinch_ev_cache.push(ev);
+}
+
+function pointermove_handler(ev) {
+  // console.log("pointer move: ", ev);
+  // This function implements a 2-pointer horizontal pinch/zoom gesture.
+  //
+  // If the distance between the two pointers has increased (zoom in),
+  // the target element's background is changed to "pink" and if the
+  // distance is decreasing (zoom out), the color is changed to "lightblue".
+  //
+  // This function sets the target element's border to "dashed" to visually
+  // indicate the pointer's target received a move event.
+
+  // Find this event in the cache and update its record with this event
+  for (var i = 0; i < pinch_ev_cache.length; i++) {
+    if (ev.pointerId == pinch_ev_cache[i].pointerId) {
+      pinch_ev_cache[i] = ev;
+      break;
+    }
+  }
+
+  // If two pointers are down, check for pinch gestures
+  if (pinch_ev_cache.length == 2) {
+    // Calculate the distance between the two pointers
+    const dx = pinch_ev_cache[0].clientX - pinch_ev_cache[1].clientX;
+    const dy = pinch_ev_cache[0].clientY - pinch_ev_cache[1].clientY;
+    const curDiff = Math.sqrt(dx * dx + dy * dy);
+
+    if (pinch_prev_dist > 0) {
+      if (curDiff > pinch_prev_dist) {
+        // The distance between the two pointers has increased
+        current_zoom += zoom_step;
+      }
+      if (curDiff < pinch_prev_dist) {
+        // The distance between the two pointers has decreased
+        current_zoom -= zoom_step;
+      }
+      apply_zoom();
+    }
+
+    // Cache the distance for the next move event
+    pinch_prev_dist = curDiff;
+  }
+}
+
+function pointerup_handler(ev) {
+  // console.log("pointer up: ", ev);
+  // Remove this pointer from the cache
+  for (var i = 0; i < pinch_ev_cache.length; i++) {
+    if (pinch_ev_cache[i].pointerId == ev.pointerId) {
+      pinch_ev_cache.splice(i, 1);
+      break;
+    }
+  }
+
+  // If the number of pointers down is less than two then reset diff tracker
+  if (pinch_ev_cache.length < 2) {
+    pinch_prev_dist = -1;
+  }
+}
+
+var video_track = null;
+var zoom_step = 0.0;
+var current_zoom = 1.5; // start at 1.5x
+
+function apply_zoom() {
+  const capabilities = video_track.getCapabilities();
+  try {
+    zoom_step = capabilities.zoom.step / 6;
+    current_zoom = Math.min(
+      capabilities.zoom.max,
+      Math.max(capabilities.zoom.min, current_zoom)
+    );
+    video_track.applyConstraints({ advanced: [{ zoom: current_zoom }] });
+  } catch (ex) {
+    console.log("Zoom not supported: ", ex);
+    return;
+  }
+
+  this.document.getElementById("zoom_val").innerText =
+    "Zoom: " + current_zoom.toFixed(1) + "x";
+}
+
 window.addEventListener("DOMContentLoaded", function () {
   if (
     !(
@@ -28,6 +122,7 @@ window.addEventListener("DOMContentLoaded", function () {
   const snapshotCanvas = this.document.getElementById("snapshot");
   const snapshotContext = snapshotCanvas.getContext("2d");
   const video = this.document.getElementById("camera");
+  const zoom = this.document.getElementById("zoom_overlay");
   const overlay = this.document.getElementById("snapshotLimitOverlay");
   const flipCameraButton = this.document.getElementById("flipCamera");
   const reloadButton = this.document.getElementById("reload");
@@ -39,8 +134,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const board = this.document.getElementById("board");
   const event_sel = this.document.getElementById("event");
-  const res_cont = this.document.getElementById("res_cont");
-  const access_cont = this.document.getElementById("access_cont");
+  const event_cont = this.document.getElementById("event_cont");
   const access_req = this.document.getElementById("access_req");
   const res_name = this.document.getElementById("res_name");
   const res_entry = this.document.getElementById("res_entry");
@@ -85,8 +179,22 @@ window.addEventListener("DOMContentLoaded", function () {
       Object.keys(events).length > 0 &&
       Object.keys(people).length > 0;
 
-    res_cont.style.display = active ? "flex" : "none";
-    access_cont.style.display = active ? "none" : "flex";
+    if (active) {
+      // do this first
+      access_req.style.display = "none";
+    }
+
+    event_cont.style.display = active ? "flex" : "none";
+    res_name.style.display = active ? "block" : "none";
+    res_entry.style.display = active ? "block" : "none";
+    tosync.style.display = active ? "block" : "none";
+
+    if (!active) {
+      // do this last
+      access_req.style.display = "block";
+    }
+
+    this.document.getElementById("res_cont").style.display = "flex";
 
     reloadButton.disabled = !active;
 
@@ -143,7 +251,7 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function update_num_sync() {
-    tosync.innerText = "To sync: " + Object.keys(pending).length;
+    tosync.innerText = "Pending sync: " + Object.keys(pending).length;
   }
 
   // global vars (not cached)
@@ -269,8 +377,14 @@ window.addEventListener("DOMContentLoaded", function () {
     if (!loading && res !== false) {
       // vibrate only if new result
       if (res != curr_result) {
-        // vibration is not supported on Edge, IE, Opera and Safari
-        navigator.vibrate(200);
+        overlay.className = "white";
+        setTimeout(function () {
+          overlay.className = "black";
+        }, 200);
+        if (typeof navigator.vibrate === "function") {
+          // vibration is not supported on Edge, IE, Opera and Safari
+          navigator.vibrate(200);
+        }
         curr_result = res;
 
         // decide what to do with the result
@@ -405,8 +519,8 @@ window.addEventListener("DOMContentLoaded", function () {
       video: {},
     };
     config.video = currentDeviceId
-      ? { deviceId: currentDeviceId }
-      : { facingMode: "environment" };
+      ? { zoom: true, deviceId: currentDeviceId }
+      : { zoom: true, facingMode: "environment" };
 
     stopStream();
 
@@ -414,6 +528,27 @@ window.addEventListener("DOMContentLoaded", function () {
       .getUserMedia(config)
       .then(function (stream) {
         document.getElementById("about").style.display = "none";
+
+        video_track = stream.getVideoTracks()[0];
+        const settings = video_track.getSettings();
+
+        // Check whether zoom is supported or not.
+        if (!("zoom" in settings)) {
+          console.log("Zoom is not supported by " + video_track.label);
+        } else {
+          // Install event handlers for the pointer target
+          zoom.addEventListener("pointerdown", pointerdown_handler);
+          zoom.addEventListener("pointermove", pointermove_handler);
+
+          // Use same handler for pointer{up,cancel,out,leave} events since
+          // the semantics for these events - in this app - are the same.
+          zoom.addEventListener("pointerup", pointerup_handler);
+          zoom.addEventListener("pointercancel", pointerup_handler);
+          zoom.addEventListener("pointerout", pointerup_handler);
+          zoom.addEventListener("pointerleave", pointerup_handler);
+
+          apply_zoom();
+        }
 
         video.srcObject = stream;
         video.oncanplay = function () {

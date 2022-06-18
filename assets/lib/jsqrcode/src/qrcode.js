@@ -1,6 +1,6 @@
 /*
    Copyright 2011 Lazar Laszlo (lazarsoft@gmail.com, www.lazarsoft.info)
-
+   
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
@@ -22,14 +22,12 @@ qrcode.height = 0;
 qrcode.qrCodeSymbol = null;
 qrcode.debug = false;
 qrcode.maxImgSize = 1024*1024;
-qrcode.version = 0;
-qrcode.ecLevel = 0;
 
 qrcode.sizeOfDataLengthInfo =  [  [ 10, 9, 8, 8 ],  [ 12, 11, 16, 10 ],  [ 14, 13, 16, 12 ] ];
 
 qrcode.callback = null;
 
-qrcode.vidSuccess = function (stream)
+qrcode.vidSuccess = function (stream) 
 {
     qrcode.localstream = stream;
     if(qrcode.webkit)
@@ -42,9 +40,9 @@ qrcode.vidSuccess = function (stream)
     }
     else
         qrcode.video.src = stream;
-
+    
     qrcode.gUM=true;
-
+    
     qrcode.canvas_qr2 = document.createElement('canvas');
     qrcode.canvas_qr2.id = "qr-canvas";
     qrcode.qrcontext2 = qrcode.canvas_qr2.getContext('2d');
@@ -52,7 +50,7 @@ qrcode.vidSuccess = function (stream)
     qrcode.canvas_qr2.height = qrcode.video.videoHeight;
     setTimeout(qrcode.captureToCanvas, 500);
 }
-
+        
 qrcode.vidError = function(error)
 {
     qrcode.gUM=false;
@@ -78,12 +76,12 @@ qrcode.captureToCanvas = function()
             try{
                 qrcode.decode();
             }
-            catch(e){
+            catch(e){       
                 console.log(e);
                 setTimeout(qrcode.captureToCanvas, 500);
             };
         }
-        catch(e){
+        catch(e){       
                 console.log(e);
                 setTimeout(qrcode.captureToCanvas, 500);
         };
@@ -111,7 +109,7 @@ qrcode.setWebcam = function(videoId)
                             " id = " + device.deviceId);
               });
             })
-
+            
         }
         catch(e)
         {
@@ -121,7 +119,7 @@ qrcode.setWebcam = function(videoId)
     else{
         console.log("no navigator.mediaDevices.enumerateDevices" );
     }
-
+    
     if(n.getUserMedia)
         n.getUserMedia({video: options, audio: false}, qrcode.vidSuccess, qrcode.vidError);
     else
@@ -139,14 +137,14 @@ qrcode.setWebcam = function(videoId)
 }
 
 qrcode.decode = function(src){
-
+    
     if(arguments.length==0)
     {
         if(qrcode.canvas_qr2)
         {
             var canvas_qr = qrcode.canvas_qr2;
             var context = qrcode.qrcontext2;
-        }
+        }	
         else
         {
             var canvas_qr = document.getElementById("qr-canvas");
@@ -187,7 +185,7 @@ qrcode.decode = function(src){
 
             canvas_qr.width = nwidth;
             canvas_qr.height = nheight;
-
+            
             context.drawImage(image, 0, 0, canvas_qr.width, canvas_qr.height );
             qrcode.width = canvas_qr.width;
             qrcode.height = canvas_qr.height;
@@ -199,7 +197,7 @@ qrcode.decode = function(src){
                     qrcode.callback(qrcode.result);
                 return;
             }
-
+            
             try
             {
                 qrcode.result = qrcode.process(context);
@@ -214,7 +212,7 @@ qrcode.decode = function(src){
         }
         image.onerror = function ()
         {
-            if(qrcode.callback!=null)
+            if(qrcode.callback!=null) 
                 qrcode.callback("Failed to load the image");
         }
         image.src = src;
@@ -259,12 +257,12 @@ qrcode.decode_utf8 = function ( s )
 }
 
 qrcode.process = function(ctx){
-
+    
     var start = new Date().getTime();
 
     var image = qrcode.grayScaleToBitmap(qrcode.grayscale());
     //var image = qrcode.binarize(128);
-
+    
     if(qrcode.debug)
     {
         for (var y = 0; y < qrcode.height; y++)
@@ -279,13 +277,13 @@ qrcode.process = function(ctx){
         }
         ctx.putImageData(qrcode.imagedata, 0, 0);
     }
-
+    
     //var finderPatternInfo = new FinderPatternFinder().findFinderPattern(image);
-
+    
     var detector = new Detector(image);
 
     var qRCodeMatrix = detector.detect();
-
+    
     if(qrcode.debug)
     {
         for (var y = 0; y < qRCodeMatrix.bits.Height; y++)
@@ -300,11 +298,9 @@ qrcode.process = function(ctx){
         }
         ctx.putImageData(qrcode.imagedata, 0, 0);
     }
-
-
-    var [reader, ver, ecLev] = Decoder.decode(qRCodeMatrix.bits);
-    qrcode.version = ver;
-    qrcode.ecLevel = ecLev;
+    
+    
+    var reader = Decoder.decode(qRCodeMatrix.bits);
     var data = reader.DataByte;
     var str="";
     for(var i=0;i<data.length;i++)
@@ -312,11 +308,11 @@ qrcode.process = function(ctx){
         for(var j=0;j<data[i].length;j++)
             str+=String.fromCharCode(data[i][j]);
     }
-
+    
     var end = new Date().getTime();
     var time = end - start;
     console.log(time);
-
+    
     return qrcode.decode_utf8(str);
     //alert("Time:" + time + " Code: "+str);
 }
@@ -340,7 +336,7 @@ qrcode.binarize = function(th){
         for (var x = 0; x < qrcode.width; x++)
         {
             var gray = qrcode.getPixel(x, y);
-
+            
             ret[x+y*qrcode.width] = gray<=th?true:false;
         }
     }
@@ -396,7 +392,7 @@ qrcode.getMiddleBrightnessPerArea=function(image)
         //Console.out.println("");
     }
     //Console.out.println("");
-
+    
     return middle;
 }
 
@@ -411,7 +407,7 @@ qrcode.grayScaleToBitmap=function(grayScale)
     var bitmap = new Uint8Array(buff);
 
     //var bitmap = new Array(qrcode.height*qrcode.width);
-
+    
     for (var ay = 0; ay < sqrtNumArea; ay++)
     {
         for (var ax = 0; ax < sqrtNumArea; ax++)
@@ -433,13 +429,13 @@ qrcode.grayscale = function()
     var buff = new ArrayBuffer(qrcode.width*qrcode.height);
     var ret = new Uint8Array(buff);
     //var ret = new Array(qrcode.width*qrcode.height);
-
+    
     for (var y = 0; y < qrcode.height; y++)
     {
         for (var x = 0; x < qrcode.width; x++)
         {
             var gray = qrcode.getPixel(x, y);
-
+            
             ret[x+y*qrcode.width] = gray;
         }
     }

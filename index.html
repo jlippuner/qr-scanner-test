@@ -81,23 +81,20 @@
   </head>
 
   <body>
-    <video id="camera" autoplay>
+    <video id="camera" muted playsinline autoplay>
       You need a camera in order to use this app.
     </video>
-    <div id="snapshotLimitOverlay">
+    <div id="snapshotLimitOverlay" class="black">
       <div id="about">
         <h4>ACF QR Scanner</h4>
         <p>
           This is a lightweight progressive web app for scanning QR Codes
-          offline.<br />
-          You'll need at least a camera and a compatible browser.<br />
-          Source code is available on GitHub (Minishlink/pwa-qr-code-scanner),
-          click the <strong>About</strong>
-          button.
+          offline.
         </p>
       </div>
     </div>
     <canvas id="snapshot"></canvas>
+    <div id="zoom_overlay"></div>
     <button
       id="reload"
       type="button"
@@ -116,7 +113,6 @@
     <div id="board">
       <div id="res_cont" class="cont">
         <div id="event_cont">
-          <label for="event">Current event: </label>
           <select name="event" id="event">
             <option value="undefined" class="past">Please select event</option>
           </select>
@@ -124,17 +120,16 @@
 
         <div class="grow">
           <div class="center" id="res_name"></div>
+          <div class="center" id="access_req">
+            Please scan<br />access QR code
+          </div>
         </div>
 
         <div id="res_entry"></div>
 
-        <div id="tosync">To sync: 0</div>
-      </div>
-      <div id="access_cont" class="cont">
-        <div class="grow">
-          <div id="access_req" class="center">
-            Please scan<br />access QR code
-          </div>
+        <div id="status">
+          <span id="zoom_val"></span>
+          <span id="tosync">Pending sync: 0</span>
         </div>
       </div>
     </div>
