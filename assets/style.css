@@ -25,6 +25,7 @@ body {
 }
 
 #board {
+  display: none;
   position: fixed;
 
   background-color: #ccc;
@@ -136,7 +137,9 @@ body {
 }
 
 #snapshot {
-  display: none;
+  display: block;
+  position: absolute;
+  bottom: 0px;
 }
 
 #flipCamera,
