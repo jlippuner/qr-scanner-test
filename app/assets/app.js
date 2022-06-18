@@ -132,8 +132,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   const board = this.document.getElementById("board");
   const event_sel = this.document.getElementById("event");
-  const res_cont = this.document.getElementById("res_cont");
-  const access_cont = this.document.getElementById("access_cont");
+  const event_cont = this.document.getElementById("event_cont");
   const access_req = this.document.getElementById("access_req");
   const res_name = this.document.getElementById("res_name");
   const res_entry = this.document.getElementById("res_entry");
@@ -178,8 +177,22 @@ window.addEventListener("DOMContentLoaded", function () {
       Object.keys(events).length > 0 &&
       Object.keys(people).length > 0;
 
-    res_cont.style.display = active ? "flex" : "none";
-    access_cont.style.display = active ? "none" : "flex";
+    if (active) {
+      // do this first
+      access_req.style.display = "none";
+    }
+
+    event_cont.style.display = active ? "flex" : "none";
+    res_name.style.display = active ? "block" : "none";
+    res_entry.style.display = active ? "block" : "none";
+    tosync.style.display = active ? "block" : "none";
+
+    if (!active) {
+      // do this last
+      access_req.style.display = "block";
+    }
+
+    this.document.getElementById("res_cont").style.display = "flex";
 
     reloadButton.disabled = !active;
 
@@ -236,7 +249,7 @@ window.addEventListener("DOMContentLoaded", function () {
   }
 
   function update_num_sync() {
-    tosync.innerText = "To sync: " + Object.keys(pending).length;
+    tosync.innerText = "Pending sync: " + Object.keys(pending).length;
   }
 
   // global vars (not cached)
@@ -362,8 +375,14 @@ window.addEventListener("DOMContentLoaded", function () {
     if (!loading && res !== false) {
       // vibrate only if new result
       if (res != curr_result) {
-        // vibration is not supported on Edge, IE, Opera and Safari
-        navigator.vibrate(200);
+        overlay.className = "white";
+        setTimeout(function () {
+          overlay.className = "black";
+        }, 200);
+        if (typeof navigator.vibrate === "function") {
+          // vibration is not supported on Edge, IE, Opera and Safari
+          navigator.vibrate(200);
+        }
         curr_result = res;
 
         // decide what to do with the result

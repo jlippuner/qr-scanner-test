@@ -81,10 +81,10 @@
   </head>
 
   <body>
-    <video id="camera" autoplay>
+    <video id="camera" muted playsinline autoplay>
       You need a camera in order to use this app.
     </video>
-    <div id="snapshotLimitOverlay">
+    <div id="snapshotLimitOverlay" class="black">
       <div id="about">
         <h4>ACF QR Scanner</h4>
         <p>
@@ -117,7 +117,7 @@
     <div id="board">
       <div id="res_cont" class="cont">
         <div id="event_cont">
-          <label for="event">Current event: </label>
+          <label for="event">Event: </label>
           <select name="event" id="event">
             <option value="undefined" class="past">Please select event</option>
           </select>
@@ -125,20 +125,18 @@
 
         <div class="grow">
           <div class="center" id="res_name"></div>
+          <div class="center" id="access_req">
+            Please scan<br />access QR code
+          </div>
         </div>
 
         <div id="res_entry"></div>
 
-        <div id="tosync">To sync: 0</div>
-      </div>
-      <div id="access_cont" class="cont">
-        <div class="grow">
-          <div id="access_req" class="center">
-            Please scan<br />access QR code
-          </div>
+        <div id="status">
+          <span id="zoom_val">Zoom: 1x</span>
+          <span id="tosync">Pending sync: 0</span>
         </div>
       </div>
     </div>
-    <span id="zoom_val">Zoom: 1x</span>
   </body>
 </html>
