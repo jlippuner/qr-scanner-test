@@ -97,11 +97,13 @@ function apply_zoom() {
       Math.max(capabilities.zoom.min, current_zoom)
     );
     video_track.applyConstraints({ advanced: [{ zoom: current_zoom }] });
-    this.document.getElementById("zoom_val").innerText =
-      "Zoom: " + current_zoom.toFixed(1) + "x";
   } catch (ex) {
     console.log("Zoom not supported: ", ex);
+    return;
   }
+
+  this.document.getElementById("zoom_val").innerText =
+    "Zoom: " + current_zoom.toFixed(1) + "x";
 }
 
 window.addEventListener("DOMContentLoaded", function () {

@@ -63,7 +63,7 @@ body {
 
 #event {
   display: table-cell;
-  width: 75%;
+  width: 100%;
   font-size: large;
 }
 
