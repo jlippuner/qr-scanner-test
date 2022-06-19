@@ -320,7 +320,20 @@ window.addEventListener("DOMContentLoaded", function () {
   let snapshotSquare;
   function calculateSquare() {
     // get square of snapshot in the video
-    let snapshotSize = overlay.offsetWidth;
+
+    let aspect_video = video.videoWidth / video.videoHeight;
+    let aspect_client = video.clientWidth / video.clientHeight;
+
+    let ratio = 1.0;
+    if (aspect_client < aspect_video) {
+      // we see the full height of the video, so determine ratio by height
+      ratio = video.videoHeight / video.clientHeight;
+    } else {
+      // we see the full width of the video
+      ratio = video.videoWidth / video.clientWidth;
+    }
+
+    let snapshotSize = overlay.clientWidth * ratio;
     snapshotSquare = {
       x: ~~((video.videoWidth - snapshotSize) / 2),
       y: ~~((video.videoHeight - snapshotSize) / 2),
@@ -340,6 +353,7 @@ window.addEventListener("DOMContentLoaded", function () {
         }
 
         // capture current snapshot
+        video.getIm
         snapshotContext.drawImage(
           video,
           snapshotSquare.x,
